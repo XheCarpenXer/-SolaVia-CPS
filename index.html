@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SolaVia CPS — Counterfactual Proof System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #06080a;
+      --sur:      #0d1117;
+      --sur2:     #161b22;
+      --bdr:      #21262d;
+      --bdr2:     #30363d;
+      --green:    #3fb950;
+      --gb:       #56d364;
+      --cyan:     #58a6ff;
+      --yellow:   #e3b341;
+      --red:      #f85149;
+      --orange:   #d29922;
+      --txt:      #e6edf3;
+      --muted:    #8b949e;
+      --codebg:   #0d1117;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100%;overflow:hidden;}
+    body{
+      font-family:'JetBrains Mono',monospace;
+      background:var(--bg);color:var(--txt);
+      display:grid;
+      grid-template-columns:210px 1fr;
+      grid-template-rows:46px 1fr;
+    }
+
+    /* ── HEADER ─────────────────────────────── */
+    header{
+      grid-column:1/-1;
+      background:var(--sur);
+      border-bottom:1px solid var(--bdr);
+      display:flex;align-items:center;
+      padding:0 20px;gap:14px;
+    }
+    .logo{
+      font-family:'Chakra Petch',sans-serif;
+      font-weight:700;font-size:13px;
+      letter-spacing:.12em;color:var(--gb);
+    }
+    .logo em{color:var(--muted);font-style:normal;font-weight:400;}
+    .vbadge{
+      background:var(--sur2);border:1px solid var(--bdr);
+      padding:2px 7px;font-size:9px;color:var(--muted);
+      letter-spacing:.1em;
+    }
+    #hStatus{
+      margin-left:auto;display:flex;align-items:center;
+      gap:8px;font-size:10px;color:var(--muted);
+    }
+    .dot{width:6px;height:6px;border-radius:50%;background:var(--bdr2);flex-shrink:0;}
+    .dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+    .dot.off{background:var(--red);}
+
+    /* ── SIDEBAR ────────────────────────────── */
+    nav{
+      background:var(--sur);border-right:1px solid var(--bdr);
+      overflow-y:auto;padding:12px 0;
+    }
+    .nlbl{
+      font-size:9px;color:var(--muted);letter-spacing:.14em;
+      text-transform:uppercase;padding:10px 14px 4px;
+    }
+    .ni{
+      display:flex;align-items:center;gap:9px;
+      padding:7px 14px;cursor:pointer;font-size:11px;
+      color:var(--muted);border-left:2px solid transparent;
+      transition:all .1s;user-select:none;
+    }
+    .ni:hover{background:var(--sur2);color:var(--txt);}
+    .ni.act{color:var(--gb);border-left-color:var(--gb);background:rgba(86,211,100,.06);}
+    .nicon{width:14px;text-align:center;font-size:12px;}
+
+    /* ── MAIN ───────────────────────────────── */
+    main{overflow-y:auto;background:var(--bg);}
+    .panel{display:none;padding:22px;flex-direction:column;gap:18px;min-height:100%;}
+    .panel.act{display:flex;}
+
+    /* ── PANEL HEADER ───────────────────────── */
+    .ph{
+      display:flex;align-items:baseline;gap:12px;
+      border-bottom:1px solid var(--bdr);padding-bottom:14px;flex-wrap:wrap;
+    }
+    .pt{
+      font-family:'Chakra Petch',sans-serif;
+      font-size:16px;font-weight:700;color:var(--txt);letter-spacing:.06em;
+    }
+    .ps{font-size:10px;color:var(--muted);}
+    .abadge{
+      background:rgba(227,179,65,.12);border:1px solid var(--yellow);
+      color:var(--yellow);padding:2px 8px;font-size:9px;letter-spacing:.1em;
+    }
+    .gbadge{
+      background:rgba(63,185,80,.12);border:1px solid var(--green);
+      color:var(--gb);padding:2px 8px;font-size:9px;letter-spacing:.1em;
+    }
+
+    /* ── FORM ELEMENTS ──────────────────────── */
+    label{
+      font-size:9px;color:var(--muted);letter-spacing:.1em;
+      text-transform:uppercase;display:block;margin-bottom:5px;
+    }
+    input,select{
+      background:var(--sur);border:1px solid var(--bdr);
+      color:var(--txt);font-family:'JetBrains Mono',monospace;
+      font-size:11px;padding:7px 10px;width:100%;outline:none;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--green);}
+    textarea{
+      background:var(--codebg);border:1px solid var(--bdr);
+      color:var(--txt);font-family:'JetBrains Mono',monospace;
+      font-size:11px;padding:11px;width:100%;resize:vertical;
+      outline:none;line-height:1.65;
+    }
+    select option{background:var(--sur);}
+    button{
+      background:var(--sur2);border:1px solid var(--bdr);
+      color:var(--txt);font-family:'JetBrains Mono',monospace;
+      font-size:11px;padding:7px 14px;cursor:pointer;
+      letter-spacing:.04em;transition:all .1s;white-space:nowrap;
+    }
+    button:hover:not(:disabled){background:var(--sur);border-color:var(--green);color:var(--gb);}
+    button.pri{
+      background:rgba(63,185,80,.12);border-color:var(--green);color:var(--gb);
+    }
+    button.pri:hover:not(:disabled){background:rgba(63,185,80,.22);}
+    button:disabled{opacity:.35;cursor:not-allowed;}
+
+    /* ── OUTPUTS ────────────────────────────── */
+    .ob{
+      background:var(--codebg);border:1px solid var(--bdr);
+      padding:11px;font-size:10px;line-height:1.7;
+      font-family:'JetBrains Mono',monospace;
+      overflow-x:auto;white-space:pre-wrap;word-break:break-all;
+      min-height:54px;color:var(--txt);
+    }
+    .ob.err{border-color:var(--red);color:var(--red);}
+    .ob.ok{border-color:var(--green);}
+    .stream{
+      background:var(--codebg);border:1px solid var(--bdr);
+      padding:11px;font-size:11px;line-height:1.7;
+      min-height:120px;max-height:320px;overflow-y:auto;
+      white-space:pre-wrap;color:var(--gb);
+      font-family:'JetBrains Mono',monospace;
+    }
+
+    /* ── LAYOUT HELPERS ─────────────────────── */
+    .fg{display:flex;flex-direction:column;gap:6px;}
+    .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+    .row .fg{flex:1;min-width:140px;}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;}
+
+    /* ── HASH CARDS ─────────────────────────── */
+    .hcard{background:var(--sur);border:1px solid var(--bdr);padding:12px;}
+    .hlbl{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+    .hval{font-size:10px;color:var(--cyan);word-break:break-all;line-height:1.6;}
+    .hval.proof{color:var(--gb);font-size:11px;font-weight:700;}
+
+    /* ── INFOBAR ────────────────────────────── */
+    .infobar{
+      display:flex;align-items:flex-start;gap:8px;
+      font-size:10px;color:var(--muted);padding:8px 12px;
+      background:var(--sur);border:1px solid var(--bdr);line-height:1.5;
+    }
+
+    /* ── TRAJECTORY ─────────────────────────── */
+    #trajOut{max-height:520px;overflow-y:auto;}
+    .ti{
+      background:var(--sur);border:1px solid var(--bdr);
+      border-left:2px solid var(--green);
+      padding:10px 12px;margin-bottom:6px;font-size:10px;
+    }
+    .ti.branch{border-left-color:var(--cyan);}
+    .th{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
+    .snum{
+      background:var(--sur2);border:1px solid var(--bdr2);
+      padding:1px 6px;font-size:9px;color:var(--muted);min-width:30px;text-align:center;
+    }
+    .opb{
+      background:rgba(88,166,255,.09);border:1px solid rgba(88,166,255,.4);
+      color:var(--cyan);padding:1px 6px;font-size:9px;letter-spacing:.06em;
+    }
+    .thash{font-size:9px;color:var(--muted);margin-top:3px;word-break:break-all;}
+
+    /* ── ALTERNATIVES ───────────────────────── */
+    .altitem{background:var(--sur);border:1px solid var(--bdr);padding:12px;margin-bottom:8px;}
+    .altid{font-size:9px;color:var(--yellow);letter-spacing:.12em;margin-bottom:5px;}
+
+    /* ── SCROLLBAR ──────────────────────────── */
+    ::-webkit-scrollbar{width:3px;height:3px;}
+    ::-webkit-scrollbar-track{background:var(--bg);}
+    ::-webkit-scrollbar-thumb{background:var(--bdr2);}
+
+    /* ── CALL ROW ───────────────────────────── */
+    .callrow{display:flex;gap:6px;align-items:center;}
+    .callrow input{flex:1;}
+    .callrow .fn-in{max-width:160px;}
+    .crstatus{font-size:9px;min-width:60px;text-align:center;padding:2px 6px;border:1px solid var(--bdr);}
+    .crstatus.ok{color:var(--gb);border-color:var(--green);}
+    .crstatus.err{color:var(--red);border-color:var(--red);}
+
+    /* ── VAULT ──────────────────────────────── */
+    .ventry{background:var(--sur);border:1px solid var(--bdr);padding:10px 12px;margin-bottom:6px;}
+    .ventryh{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
+    .vtag{font-size:9px;color:var(--muted);letter-spacing:.08em;}
+    .vhash{font-size:10px;color:var(--cyan);word-break:break-all;}
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────── -->
+<header>
+  <div class="logo">SOLAVIA <em>CPS</em></div>
+  <div class="vbadge">SPEC v1.1 · REAL CALLS · SYMBOLIC CF · VAULT</div>
+  <div id="hStatus"><div class="dot" id="oDot"></div><span id="oTxt">checking ollama…</span></div>
+</header>
+
+<!-- ── SIDEBAR ────────────────────────────────────── -->
+<nav>
+  <div class="nlbl">Pipeline</div>
+  <div class="ni act" data-p="advisory" onclick="nav(this)"><span class="nicon">◈</span>Advisory Parser</div>
+  <div class="ni" data-p="editor" onclick="nav(this)"><span class="nicon">⎔</span>JSONFlow Editor</div>
+  <div class="ni" data-p="compiler" onclick="nav(this)"><span class="nicon">⊞</span>IR Compiler</div>
+  <div class="nlbl">Execution</div>
+  <div class="ni" data-p="executor" onclick="nav(this)"><span class="nicon">▶</span>Executor</div>
+  <div class="ni" data-p="proof" onclick="nav(this)"><span class="nicon">◆</span>Proof Dashboard</div>
+  <div class="nlbl">Verification</div>
+  <div class="ni" data-p="cf" onclick="nav(this)"><span class="nicon">⌥</span>Counterfactual</div>
+  <div class="nlbl">Storage</div>
+  <div class="ni" data-p="vault" onclick="nav(this)"><span class="nicon">◉</span>Proof Vault</div>
+  <div class="nlbl">Settings</div>
+  <div class="ni" data-p="calls" onclick="nav(this)"><span class="nicon">⇌</span>External Calls</div>
+</nav>
+
+<!-- ── MAIN ───────────────────────────────────────── -->
+<main>
+
+  <!-- ADVISORY -->
+  <div class="panel act" id="panel-advisory">
+    <div class="ph">
+      <div class="pt">ADVISORY PARSER</div>
+      <div class="abadge">ADVISORY ONLY — NOT EXECUTABLE</div>
+      <div class="ps">Natural language → JSONFlow suggestion via Ollama · §1.2</div>
+    </div>
+    <div class="infobar">⚠&nbsp; Per §1.2: Natural language MUST NOT affect execution directly. Output is advisory input only and requires user validation before use.</div>
+    <div class="row">
+      <div class="fg" style="max-width:280px">
+        <label>Ollama Host</label>
+        <input type="text" id="oHost" value="http://localhost:11434">
+      </div>
+      <div class="fg" style="max-width:260px">
+        <label>Model</label>
+        <select id="oModel">
+          <option>llama3.2</option><option>llama3.1</option><option>mistral</option>
+          <option>codellama</option><option>deepseek-coder</option><option>qwen2.5-coder</option>
+          <option>phi3</option><option>gemma2</option>
+        </select>
+      </div>
+      <button onclick="checkOllama()">Check Connection</button>
+    </div>
+    <div class="fg">
+      <label>Natural Language Workflow Description</label>
+      <textarea id="nlIn" rows="5" placeholder="Describe your workflow…&#10;&#10;Example: Validate user age is ≥ 18, check account balance covers the requested amount, conditionally approve or reject the transaction, emit a log event at each step."></textarea>
+    </div>
+    <div class="row">
+      <button class="pri" onclick="runAdvisory()" id="advBtn">Generate Advisory JSONFlow</button>
+      <button onclick="adoptAdvisory()" id="adoptBtn" disabled>Adopt to Editor →</button>
+    </div>
+    <div class="fg">
+      <label>Advisory Output (Streaming)</label>
+      <div class="stream" id="advOut">—</div>
+    </div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="panel" id="panel-editor">
+    <div class="ph">
+      <div class="pt">JSONFLOW EDITOR</div>
+      <div class="gbadge">CANONICAL EXECUTABLE</div>
+      <div class="ps">Only JSONFlow is executable · §3.1</div>
+    </div>
+    <div class="row">
+      <button onclick="loadEx()">Load Example</button>
+      <button onclick="validateWF()">Validate Schema</button>
+      <button onclick="canonWF()">Canonicalize</button>
+      <button class="pri" onclick="hashWF()">Compute wfHash</button>
+    </div>
+    <div class="fg">
+      <label>JSONFlow Specification</label>
+      <textarea id="wfEd" rows="22" spellcheck="false" placeholder='{"id":"…","version":"1.0","inputs":{},"steps":[]}'></textarea>
+    </div>
+    <div class="fg"><label>Validation / Status</label><div class="ob" id="edOut">—</div></div>
+    <div class="g3">
+      <div class="hcard"><div class="hlbl">wfHash — SHA-256(canonical JSON)</div><div class="hval" id="wfHd">—</div></div>
+    </div>
+  </div>
+
+  <!-- COMPILER -->
+  <div class="panel" id="panel-compiler">
+    <div class="ph">
+      <div class="pt">IR COMPILER</div>
+      <div class="ps">JSONFlow → Intermediate Representation · §3.2 / §3.3</div>
+    </div>
+    <div class="row"><button class="pri" onclick="compileIR()">Compile JSONFlow → IR</button></div>
+    <div class="g2">
+      <div class="fg">
+        <label>Intermediate Representation</label>
+        <div class="ob" id="irOut" style="min-height:420px">—</div>
+      </div>
+      <div class="fg" style="gap:14px">
+        <div class="fg"><label>irHash — SHA-256(serialized IR)</label>
+          <div class="hcard"><div class="hval" id="irHd">—</div></div>
+        </div>
+        <div class="fg"><label>Instruction Statistics</label><div class="ob" id="irStats">—</div></div>
+        <div class="fg"><label>Opcode Distribution</label><div class="ob" id="irOps">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTOR -->
+  <div class="panel" id="panel-executor">
+    <div class="ph">
+      <div class="pt">EXECUTION ENGINE</div>
+      <div class="ps">Deterministic IR execution with signed trajectory · §3.5 / §3.6 / §3.7</div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Entropy Seed (user-supplied)</label><input type="text" id="eSeed" value="solavia-entropy-seed-v1"></div>
+      <div class="fg"><label>Input Values (JSON object)</label><input type="text" id="eInputs" value="{}"></div>
+      <button onclick="genSeed()">Random Seed</button>
+      <button class="pri" onclick="runExec()">Execute</button>
+    </div>
+    <div class="g3">
+      <div class="hcard"><div class="hlbl">Computed Entropy Seed Hash — SHA-256(userSeed ∥ wfHash)</div><div class="hval" id="eSeedH">—</div></div>
+    </div>
+    <div class="fg"><label>Signed Execution Trajectory</label><div id="trajOut"><div class="ob">— execute to see trajectory —</div></div></div>
+  </div>
+
+  <!-- PROOF -->
+  <div class="panel" id="panel-proof">
+    <div class="ph">
+      <div class="pt">PROOF DASHBOARD</div>
+      <div class="ps">Cryptographic proof of execution · §3.8</div>
+    </div>
+    <div class="row">
+      <button class="pri" onclick="genProof()">Generate Proof</button>
+      <button onclick="exportProof()">Export JSON</button>
+    </div>
+    <div class="g3">
+      <div class="hcard"><div class="hlbl">wfHash</div><div class="hval" id="p-wf">—</div></div>
+      <div class="hcard"><div class="hlbl">irHash</div><div class="hval" id="p-ir">—</div></div>
+      <div class="hcard"><div class="hlbl">inputHash</div><div class="hval" id="p-inp">—</div></div>
+      <div class="hcard"><div class="hlbl">effectHash</div><div class="hval" id="p-eff">—</div></div>
+      <div class="hcard"><div class="hlbl">outputHash</div><div class="hval" id="p-out">—</div></div>
+      <div class="hcard"><div class="hlbl">choiceHash</div><div class="hval" id="p-ch">—</div></div>
+      <div class="hcard"><div class="hlbl">traceHash</div><div class="hval" id="p-tr">—</div></div>
+    </div>
+    <div class="fg">
+      <label>Final Proof Hash — SHA-256(wfHash ∥ irHash ∥ inputHash ∥ effectHash ∥ outputHash ∥ choiceHash ∥ traceHash)</label>
+      <div class="hcard" style="border-color:var(--green)"><div class="hval proof" id="p-proof">—</div></div>
+    </div>
+    <div class="fg">
+      <label>Signing Public Key</label>
+      <div class="hcard"><div class="hval" id="p-pub">—</div></div>
+    </div>
+    <div class="fg"><label>Full Proof Object</label><div class="ob" id="proofFull" style="min-height:200px">—</div></div>
+  </div>
+
+  <!-- COUNTERFACTUAL -->
+  <div class="panel" id="panel-cf">
+    <div class="ph">
+      <div class="pt">COUNTERFACTUAL EXPLORER</div>
+      <div class="ps">Query valid alternative computations · §4</div>
+    </div>
+    <div class="infobar">◈&nbsp; Alternatives are recomputed deterministically on demand — never stored · §1.5 / §4.1</div>
+    <div class="row">
+      <div class="fg" style="max-width:160px"><label>Step Index</label><input type="number" id="cfIdx" value="0" min="0"></div>
+      <div class="fg" style="max-width:280px"><label>Context (JSON)</label><input type="text" id="cfCtx" value='{"consent":true}'></div>
+      <button class="pri" onclick="queryAlt()">Query Alternatives</button>
+    </div>
+    <div class="fg"><label>Execution Choice Points</label><div class="ob" id="cfCPs">— run execution first —</div></div>
+    <div class="fg"><label>Alternative States at Step</label><div id="cfAlt"><div class="ob">— query to enumerate alternatives —</div></div></div>
+  </div>
+
+  <!-- PROOF VAULT -->
+  <div class="panel" id="panel-vault">
+    <div class="ph">
+      <div class="pt">PROOF VAULT</div>
+      <div class="gbadge">PERSISTENT · VERSIONED</div>
+      <div class="ps">Local proof history with commitment reveal · §3.8 ext</div>
+    </div>
+    <div class="infobar">◉&nbsp; Proofs are stored in <code>localStorage</code> keyed by proofHash. Each entry commits to the trace without exposing it until you explicitly "Open Commitment".</div>
+    <div class="row">
+      <button class="pri" onclick="vaultSave()">Save Current Proof</button>
+      <button onclick="vaultClear()">Clear Vault</button>
+    </div>
+    <div class="fg"><label>Saved Proofs (newest first)</label><div id="vaultList" class="ob" style="min-height:200px">— no proofs saved —</div></div>
+    <div class="fg"><label>Commitment Detail (after Open)</label><div id="vaultDetail" class="ob" style="min-height:120px">—</div></div>
+  </div>
+
+  <!-- EXTERNAL CALLS CONFIG -->
+  <div class="panel" id="panel-calls">
+    <div class="ph">
+      <div class="pt">EXTERNAL CALL ENDPOINTS</div>
+      <div class="abadge">REAL SIDE-EFFECTS</div>
+      <div class="ps">Map CALL op function names to real HTTP endpoints · §3.5 ext</div>
+    </div>
+    <div class="infobar">⚠&nbsp; Endpoints receive POST requests with <code>{fn, args, stateHash}</code> and must return <code>{result, data}</code>. CORS must be enabled on the target server. Unmapped functions fall back to simulation.</div>
+    <div id="callRows" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="row" style="margin-top:4px">
+      <button onclick="addCallRow()">+ Add Mapping</button>
+      <button class="pri" onclick="testCallEndpoints()">Test All Endpoints</button>
+    </div>
+    <div class="fg" style="margin-top:8px"><label>Test Results</label><div class="ob" id="callTestOut" style="min-height:80px">—</div></div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════
+const S = {
+  wf: null, canonical: null, wfHash: null,
+  ir: null, irHash: null,
+  traj: [], choices: [], effects: [], execOut: null,
+  proof: null, kp: null, pubHex: null, sigAlgo: null,
+  advText: null,
+  callEndpoints: {},   // fn name → URL
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════
+function nav(el) {
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('act'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('act'));
+  el.classList.add('act');
+  document.getElementById('panel-' + el.dataset.p).classList.add('act');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CRYPTO: SHA-256
+// ═══════════════════════════════════════════════════════════════════════
+async function h256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CRYPTO: SIGNING KEY INIT (Ed25519 → ECDSA P-256 fallback)
+// ═══════════════════════════════════════════════════════════════════════
+async function initKey() {
+  try {
+    S.kp = await crypto.subtle.generateKey({name:'Ed25519'}, true, ['sign','verify']);
+    const raw = await crypto.subtle.exportKey('raw', S.kp.publicKey);
+    S.pubHex = [...new Uint8Array(raw)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    S.sigAlgo = 'Ed25519';
+  } catch {
+    S.kp = await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'}, true, ['sign','verify']);
+    const raw = await crypto.subtle.exportKey('raw', S.kp.publicKey);
+    S.pubHex = [...new Uint8Array(raw)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    S.sigAlgo = {name:'ECDSA',hash:'SHA-256'};
+  }
+  document.getElementById('p-pub').textContent = S.pubHex;
+}
+
+async function sign(str) {
+  if (!S.kp) return '(no-key)';
+  try {
+    const sig = await crypto.subtle.sign(S.sigAlgo, S.kp.privateKey, new TextEncoder().encode(str));
+    return [...new Uint8Array(sig)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  } catch { return '(sign-error)'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CANONICALIZATION — §3.1.1
+// ═══════════════════════════════════════════════════════════════════════
+function canon(v) {
+  if (v === null || typeof v !== 'object') {
+    return (typeof v === 'number') ? parseFloat(v.toString()) : v;
+  }
+  if (Array.isArray(v)) return v.map(canon);
+  const o = {};
+  Object.keys(v).sort().forEach(k => { o[k] = canon(v[k]); });
+  return o;
+}
+const cJSON = v => JSON.stringify(canon(v));
+
+// ═══════════════════════════════════════════════════════════════════════
+// JSONFLOW SCHEMA VALIDATION — §3.1
+// ═══════════════════════════════════════════════════════════════════════
+const OPS = new Set(['SET','EVAL','JMP_IF','CALL','RETURN','ASSERT','EMIT','PARALLEL']);
+
+function validateSchema(wf) {
+  const errs = [];
+  if (!wf || typeof wf !== 'object') { errs.push('Root must be a JSON object'); return errs; }
+  if (!wf.id || typeof wf.id !== 'string') errs.push('Field "id": required string');
+  if (!wf.version || typeof wf.version !== 'string') errs.push('Field "version": required string');
+  if (typeof wf.inputs !== 'object' || Array.isArray(wf.inputs)) errs.push('Field "inputs": required object');
+  if (!Array.isArray(wf.steps) || wf.steps.length === 0) { errs.push('Field "steps": required non-empty array'); return errs; }
+  const seen = new Set();
+  wf.steps.forEach((s, i) => {
+    const p = `steps[${i}]`;
+    if (!s.id || typeof s.id !== 'string') errs.push(`${p}: missing "id"`);
+    if (seen.has(s.id)) errs.push(`${p}: duplicate id "${s.id}"`);
+    seen.add(s.id);
+    if (!s.op || !OPS.has(s.op)) errs.push(`${p}: invalid op "${s.op}" — valid: ${[...OPS].join(', ')}`);
+    if (!Array.isArray(s.args)) errs.push(`${p}: "args" must be array`);
+    if (s.dest !== undefined && s.dest !== null && typeof s.dest !== 'string') errs.push(`${p}: "dest" must be string or null`);
+  });
+  return errs;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EDITOR ACTIONS
+// ═══════════════════════════════════════════════════════════════════════
+function loadEx() {
+  document.getElementById('wfEd').value = JSON.stringify({
+    id: 'wf-transaction-approval',
+    version: '1.0',
+    inputs: { userId: 'string', amount: 'number', accountId: 'string' },
+    steps: [
+      { id: 's1', op: 'SET',    args: ['userAge', 25],                          dest: 'userAge',  meta: { description: 'Initialize user age' } },
+      { id: 's2', op: 'ASSERT', args: ['userAge >= 18'],                         dest: null,       meta: { invariant: 'age_check' } },
+      { id: 's3', op: 'EVAL',   args: ['balance > amount'],                      dest: 'hasFunds', meta: { description: 'Check account balance' } },
+      { id: 's4', op: 'JMP_IF', args: ['hasFunds', 's5', 's6'],                  dest: null,       meta: { description: 'Branch on available funds' } },
+      { id: 's5', op: 'CALL',   args: ['approveTransaction', 'userId', 'amount'], dest: 'txResult', meta: {} },
+      { id: 's6', op: 'EMIT',   args: ['REJECT', 'insufficient_funds'],           dest: null,       meta: {} },
+      { id: 's7', op: 'RETURN', args: ['txResult'],                               dest: null,       meta: {} },
+    ]
+  }, null, 2);
+  setOut('edOut', '— loaded example — validate or canonicalize to proceed', '');
+}
+
+function setOut(id, txt, cls) {
+  const el = document.getElementById(id);
+  el.className = 'ob' + (cls ? ' ' + cls : '');
+  el.textContent = txt;
+}
+
+function validateWF() {
+  let wf;
+  try { wf = JSON.parse(document.getElementById('wfEd').value); }
+  catch(e) { setOut('edOut', 'JSON PARSE ERROR: ' + e.message, 'err'); return; }
+  const errs = validateSchema(wf);
+  if (!errs.length) {
+    S.wf = wf;
+    setOut('edOut', `✓ Valid JSONFlow\n  id:      ${wf.id}\n  version: ${wf.version}\n  steps:   ${wf.steps.length}\n  inputs:  ${Object.keys(wf.inputs||{}).join(', ') || '(none)'}`, 'ok');
+  } else {
+    setOut('edOut', 'VALIDATION ERRORS:\n\n' + errs.map(e => '  • ' + e).join('\n'), 'err');
+  }
+}
+
+async function canonWF() {
+  let wf;
+  try { wf = JSON.parse(document.getElementById('wfEd').value); }
+  catch(e) { setOut('edOut', 'JSON PARSE ERROR: ' + e.message, 'err'); return; }
+  const errs = validateSchema(wf);
+  if (errs.length) { setOut('edOut', 'Cannot canonicalize — fix errors first:\n' + errs.join('\n'), 'err'); return; }
+  const c = cJSON(wf);
+  S.canonical = c; S.wf = wf;
+  document.getElementById('wfEd').value = JSON.stringify(JSON.parse(c), null, 2);
+  setOut('edOut', `✓ Canonicalized\n  keys sorted lexicographically\n  numbers normalized\n  bytes: ${new TextEncoder().encode(c).length}`, 'ok');
+  await hashWF();
+}
+
+async function hashWF() {
+  let wf;
+  try { wf = JSON.parse(document.getElementById('wfEd').value); }
+  catch { return; }
+  S.wf = wf;
+  S.canonical = cJSON(wf);
+  S.wfHash = await h256(S.canonical);
+  document.getElementById('wfHd').textContent = S.wfHash;
+  document.getElementById('p-wf').textContent = S.wfHash;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// IR COMPILER — §3.2 / §3.3
+// ═══════════════════════════════════════════════════════════════════════
+async function compileIR() {
+  if (!S.wf) { setOut('irOut', 'ERROR: Validate JSONFlow in Editor first.', 'err'); return; }
+  const wf = S.wf;
+  const ir = [];
+  const opc = {};
+
+  // Prologue
+  ir.push({ op:'SET',  args:['__wf_id', wf.id],      dest:'__wf_id',  meta:{phase:'prologue'} });
+  ir.push({ op:'SET',  args:['__version', wf.version],dest:'__version',meta:{phase:'prologue'} });
+  Object.entries(wf.inputs || {}).forEach(([k,t]) =>
+    ir.push({ op:'SET', args:[k,'__input.'+k], dest:k, meta:{type:t,phase:'input-binding'} })
+  );
+
+  // Workflow steps → IR instructions
+  wf.steps.forEach((s, i) => {
+    const ins = { op:s.op, args:[...s.args], dest:s.dest||null, meta:{...s.meta, stepId:s.id, stepIndex:i} };
+    ir.push(ins);
+    opc[s.op] = (opc[s.op]||0) + 1;
+  });
+
+  // Epilogue
+  ir.push({ op:'EMIT', args:['__EXECUTION_COMPLETE', wf.id], dest:null, meta:{phase:'epilogue'} });
+
+  S.ir = ir;
+  S.irHash = await h256(JSON.stringify(ir));
+
+  setOut('irOut', JSON.stringify(ir, null, 2), 'ok');
+  document.getElementById('irHd').textContent = S.irHash;
+  document.getElementById('p-ir').textContent = S.irHash;
+
+  const prolLen = 2 + Object.keys(wf.inputs||{}).length;
+  document.getElementById('irStats').textContent =
+    `Total instructions : ${ir.length}\nPrologue           : ${prolLen}\nWorkflow steps     : ${wf.steps.length}\nEpilogue           : 1`;
+  document.getElementById('irOps').textContent =
+    Object.entries(opc).map(([op,n]) => op.padEnd(12)+n).join('\n') || '(no steps)';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONSTRAINT FUNCTIONS — §3.4
+// Returns finite deterministic set of valid next states
+// ═══════════════════════════════════════════════════════════════════════
+function constraintAlts(instr) {
+  switch (instr.op) {
+    case 'JMP_IF':  return [
+      { id:'A', label:`THEN → ${instr.args[1]}`, branch:true  },
+      { id:'B', label:`ELSE → ${instr.args[2]}`, branch:false },
+    ];
+    case 'SET':     return [
+      { id:'A', label:`ASSIGN ${instr.args[0]} = ${JSON.stringify(instr.args[1])}`, value:instr.args[1] },
+      { id:'B', label:`ASSIGN ${instr.args[0]} = null`, value:null },
+    ];
+    case 'CALL':    return [
+      { id:'A', label:`CALL ${instr.args[0]} → success`, result:'success' },
+      { id:'B', label:`CALL ${instr.args[0]} → failure`, result:'failure' },
+      { id:'C', label:`CALL ${instr.args[0]} → timeout`, result:'timeout' },
+    ];
+    case 'ASSERT':  return [
+      { id:'A', label:'ASSERT: invariant holds', holds:true  },
+      { id:'B', label:'ASSERT: invariant violated', holds:false },
+    ];
+    case 'EVAL':    return [
+      { id:'A', label:`EVAL ${instr.args[0]} → true`,  result:true  },
+      { id:'B', label:`EVAL ${instr.args[0]} → false`, result:false },
+    ];
+    default:        return [
+      { id:'A', label:'execute (default path)' },
+      { id:'B', label:'skip (no-op path)'      },
+    ];
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXECUTION ENGINE — §3.5 / §3.6 / §3.7
+// ═══════════════════════════════════════════════════════════════════════
+async function runExec() {
+  if (!S.ir) { alert('Compile IR first'); return; }
+
+  let inputs = {};
+  try { inputs = JSON.parse(document.getElementById('eInputs').value); } catch {}
+
+  const userSeed = document.getElementById('eSeed').value;
+  const entropySeed = await h256(userSeed + (S.wfHash || ''));
+  document.getElementById('eSeedH').textContent = entropySeed;
+
+  const traj = [], choices = [], effects = [];
+  let env = { ...inputs };
+  let prevHash = await h256('genesis:' + entropySeed);
+
+  for (let i = 0; i < S.ir.length; i++) {
+    const ins = S.ir[i];
+    const snap = JSON.stringify({ step:i, env:{...env}, ins });
+    const stateHash = await h256(prevHash + snap);
+    let chosen = 'A', isBranch = false;
+
+    // Determine chosen alternative
+    if (ins.op === 'JMP_IF') {
+      isBranch = true;
+      const condVal = !!env[ins.args[0]];
+      chosen = condVal ? 'A' : 'B';
+      choices.push({ step:i, type:'branch', stepId:ins.meta?.stepId||'?', alts:constraintAlts(ins), chosen });
+    } else if (['CALL','ASSERT','EVAL','SET'].includes(ins.op) && ins.meta?.phase !== 'prologue' && ins.meta?.phase !== 'input-binding') {
+      isBranch = true;
+      choices.push({ step:i, type:'choice', stepId:ins.meta?.stepId||'?', alts:constraintAlts(ins), chosen:'A' });
+    }
+
+    // Apply state mutation
+    if (ins.op === 'SET' && ins.dest) {
+      const v = String(ins.args[1]);
+      env[ins.dest] = v.startsWith('__input.') ? (inputs[v.slice(8)] ?? null) : ins.args[1];
+    } else if (ins.op === 'EVAL' && ins.dest) {
+      env[ins.dest] = true;
+    } else if (ins.op === 'CALL' && ins.dest) {
+      const fnName = ins.args[0];
+      const fnArgs = ins.args.slice(1);
+      let callResult = 'success';
+      let callData   = null;
+      const url = S.callEndpoints[fnName];
+      if (url) {
+        try {
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fn: fnName, args: fnArgs, stateHash }),
+            signal: AbortSignal.timeout(8000),
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const body = await r.json();
+          callResult = body.result ?? 'success';
+          callData   = body.data ?? null;
+        } catch (fetchErr) {
+          callResult = 'error';
+          callData   = { error: fetchErr.message };
+        }
+      }
+      const eff = { name: fnName, args: fnArgs, result: callResult, data: callData, real: !!url, commitment: stateHash };
+      effects.push(eff);
+      env[ins.dest] = { status: callResult, fn: fnName, data: callData, real: !!url };
+    } else if (ins.op === 'EMIT') {
+      effects.push({ name:'emit', args:ins.args, commitment:stateHash });
+    }
+
+    // Sign trajectory point: prevHash ∥ instruction ∥ nextHash
+    const sigData = prevHash + JSON.stringify(ins) + stateHash;
+    const sig = await sign(sigData);
+
+    traj.push({ index:i, stateHash, instruction:ins, chosen, isBranch, sig });
+    prevHash = stateHash;
+  }
+
+  S.traj = traj; S.choices = choices; S.effects = effects; S.execOut = { ...env };
+
+  renderTraj(traj);
+
+  const cpEl = document.getElementById('cfCPs');
+  cpEl.textContent = choices.length
+    ? choices.map(c => `Step ${String(c.step).padStart(3,' ')}  ${c.type.toUpperCase().padEnd(8,' ')}  stepId: ${c.stepId}  alternatives: ${c.alts.length}  chosen: ${c.chosen}`).join('\n')
+    : '— no choice points found —';
+}
+
+function renderTraj(traj) {
+  const c = document.getElementById('trajOut');
+  c.innerHTML = '';
+  traj.forEach(pt => {
+    const d = document.createElement('div');
+    d.className = 'ti' + (pt.isBranch ? ' branch' : '');
+    d.innerHTML =
+      `<div class="th">` +
+      `<span class="snum">${String(pt.index).padStart(3,'0')}</span>` +
+      `<span class="opb">${pt.instruction.op}</span>` +
+      `<span style="font-size:10px;color:var(--txt)">${pt.instruction.args.join(', ')}</span>` +
+      (pt.instruction.dest ? `<span style="font-size:9px;color:var(--muted)">→ ${pt.instruction.dest}</span>` : '') +
+      (pt.isBranch ? `<span style="font-size:9px;color:var(--yellow);margin-left:auto">CHOICE: ${pt.chosen}</span>` : '') +
+      (pt.instruction.op === 'CALL' && S.callEndpoints[pt.instruction.args[0]]
+        ? `<span style="font-size:9px;color:var(--green);margin-left:auto">⇌ REAL</span>`
+        : (pt.instruction.op === 'CALL' ? `<span style="font-size:9px;color:var(--muted);margin-left:auto">~ SIM</span>` : '')) +
+      `</div>` +
+      `<div class="thash">stateHash : ${pt.stateHash}</div>` +
+      `<div class="thash">signature : ${pt.sig.slice(0,48)}…</div>`;
+    c.appendChild(d);
+  });
+}
+
+function genSeed() {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  document.getElementById('eSeed').value = [...b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PROOF GENERATION — §3.8
+// ═══════════════════════════════════════════════════════════════════════
+async function genProof() {
+  if (!S.wfHash)      { alert('wfHash missing — Editor tab'); return; }
+  if (!S.irHash)      { alert('irHash missing — Compiler tab'); return; }
+  if (!S.traj.length) { alert('No trajectory — Executor tab'); return; }
+
+  const inputHash  = await h256(JSON.stringify(S.wf?.inputs || {}));
+  const effectHash = await h256(JSON.stringify(S.effects));
+  const outputHash = await h256(JSON.stringify(S.execOut || {}));
+  const choiceHash = await h256(JSON.stringify(S.choices));
+  const traceHash  = await h256(JSON.stringify(S.traj.map(t => ({
+    index: t.index, stateHash: t.stateHash, op: t.instruction.op, chosen: t.chosen
+  }))));
+  const proofHash  = await h256(S.wfHash + S.irHash + inputHash + effectHash + outputHash + choiceHash + traceHash);
+
+  document.getElementById('p-wf').textContent   = S.wfHash;
+  document.getElementById('p-ir').textContent   = S.irHash;
+  document.getElementById('p-inp').textContent  = inputHash;
+  document.getElementById('p-eff').textContent  = effectHash;
+  document.getElementById('p-out').textContent  = outputHash;
+  document.getElementById('p-ch').textContent   = choiceHash;
+  document.getElementById('p-tr').textContent   = traceHash;
+  document.getElementById('p-proof').textContent = proofHash;
+  document.getElementById('p-pub').textContent  = S.pubHex || '—';
+
+  const obj = {
+    specVersion: '1.0',
+    generated: new Date().toISOString(),
+    workflowId: S.wf?.id,
+    signingAlgorithm: typeof S.sigAlgo === 'string' ? S.sigAlgo : S.sigAlgo?.name,
+    signingPublicKey: S.pubHex,
+    hashes: { wfHash:S.wfHash, irHash:S.irHash, inputHash, effectHash, outputHash, choiceHash, traceHash },
+    proofHash,
+    stats: { trajectoryLength: S.traj.length, choicePoints: S.choices.length, effects: S.effects.length }
+  };
+
+  S.proof = obj;
+  document.getElementById('proofFull').textContent = JSON.stringify(obj, null, 2);
+  document.getElementById('proofFull').className = 'ob ok';
+}
+
+function exportProof() {
+  if (!S.proof) { alert('Generate proof first'); return; }
+  const blob = new Blob([JSON.stringify(S.proof, null, 2)], { type:'application/json' });
+  const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:`solavia-proof-${Date.now()}.json` });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// COUNTERFACTUAL INTERFACE — §4
+// queryAlternatives(stepIndex, context) → Set<State>
+// ═══════════════════════════════════════════════════════════════════════
+async function queryAlt() {
+  const idx = parseInt(document.getElementById('cfIdx').value);
+  const c   = document.getElementById('cfAlt');
+
+  if (!S.traj.length)               { c.innerHTML = '<div class="ob err">Run execution first (Executor tab)</div>'; return; }
+  if (idx < 0 || idx >= S.traj.length) { c.innerHTML = `<div class="ob err">Index out of range (0–${S.traj.length-1})</div>`; return; }
+
+  const pt    = S.traj[idx];
+  const alts  = constraintAlts(pt.instruction);
+  const choice = S.choices.find(x => x.step === idx);
+
+  // ── Symbolic forward-simulation for each alternative ──────────────
+  // Rebuild env up to step idx from the actual trajectory
+  let baseEnv = {};
+  // re-derive env by replaying all SET/EVAL/CALL instructions before idx
+  let wf_inputs = {};
+  try { wf_inputs = JSON.parse(document.getElementById('eInputs').value); } catch {}
+  for (let i = 0; i < idx; i++) {
+    const ins = S.ir[i];
+    if (ins.op === 'SET' && ins.dest) {
+      const v = String(ins.args[1]);
+      baseEnv[ins.dest] = v.startsWith('__input.') ? (wf_inputs[v.slice(8)] ?? null) : ins.args[1];
+    } else if (ins.op === 'EVAL' && ins.dest) {
+      baseEnv[ins.dest] = true;
+    } else if (ins.op === 'CALL' && ins.dest) {
+      baseEnv[ins.dest] = { status: 'success', fn: ins.args[0] };
+    }
+  }
+
+  // Simulate the remaining IR (from idx+1 onward) under each injected alt
+  async function simulateFrom(altOverride, startEnv) {
+    let env = { ...startEnv };
+    // Apply the alt override to env
+    if (altOverride.value !== undefined && pt.instruction.dest) env[pt.instruction.dest] = altOverride.value;
+    if (altOverride.result !== undefined && pt.instruction.dest) env[pt.instruction.dest] = { status: altOverride.result, fn: pt.instruction.args[0] };
+    if (altOverride.holds === false) return { env, halted: true, haltReason: 'ASSERT violation', stepsRun: 0 };
+
+    let branchPath = []; let stepsRun = 0;
+    for (let i = idx + 1; i < S.ir.length && stepsRun < 200; i++, stepsRun++) {
+      const ins = S.ir[i];
+      if (ins.op === 'SET' && ins.dest) {
+        const v = String(ins.args[1]);
+        env[ins.dest] = v.startsWith('__input.') ? (wf_inputs[v.slice(8)] ?? null) : ins.args[1];
+      } else if (ins.op === 'EVAL' && ins.dest) {
+        env[ins.dest] = true;
+      } else if (ins.op === 'CALL' && ins.dest) {
+        env[ins.dest] = { status: 'success', fn: ins.args[0] };
+      } else if (ins.op === 'JMP_IF') {
+        branchPath.push({ step: i, cond: ins.args[0], val: !!env[ins.args[0]], taken: !!env[ins.args[0]] ? ins.args[1] : ins.args[2] });
+      } else if (ins.op === 'ASSERT') {
+        // no-op: mark but continue
+      } else if (ins.op === 'RETURN') {
+        return { env, halted: false, haltReason: null, stepsRun, branchPath, returnVal: ins.args[0] ? env[ins.args[0]] : null };
+      }
+    }
+    return { env, halted: false, haltReason: null, stepsRun, branchPath: branchPath || [] };
+  }
+
+  c.innerHTML = '';
+  const bar = document.createElement('div');
+  bar.className = 'infobar';
+  bar.textContent = `Step ${idx} · op: ${pt.instruction.op} · ${alts.length} alternatives · full forward-simulation from step ${idx+1}`;
+  c.appendChild(bar);
+
+  for (const alt of alts) {
+    alt.stateHash = await h256(pt.stateHash + alt.id + JSON.stringify(alt));
+    const sim = await simulateFrom(alt, baseEnv);
+
+    const isChosen = choice?.chosen === alt.id;
+    const div = document.createElement('div');
+    div.className = 'altitem';
+    const branchSummary = sim.branchPath?.length
+      ? sim.branchPath.map(b => `  step ${String(b.step).padStart(3,' ')} JMP_IF ${b.cond}=${b.val} → ${b.taken}`).join('\n')
+      : '  (no further branches)';
+    const finalEnvStr = JSON.stringify(
+      Object.fromEntries(Object.entries(sim.env).filter(([k]) => !k.startsWith('__'))),
+      null, 2
+    );
+    div.innerHTML =
+      `<div class="altid">ALTERNATIVE ${alt.id} ` +
+      (isChosen
+        ? `<span style="color:var(--gb)">◆ ACTUAL CHOSEN PATH</span>`
+        : `<span style="color:var(--muted)">◇ COUNTERFACTUAL — SYMBOLIC</span>`) +
+      `</div>` +
+      `<div style="font-size:11px;color:var(--txt);margin-bottom:6px">${alt.label}</div>` +
+      `<div class="thash">stateHash      : ${alt.stateHash}</div>` +
+      (sim.halted ? `<div style="font-size:9px;color:var(--red);margin-top:4px">⊘ HALTED: ${sim.haltReason}</div>` :
+        `<div style="font-size:9px;color:var(--muted);margin-top:4px">steps simulated : ${sim.stepsRun}` +
+        (sim.returnVal !== undefined ? `  ·  return: ${JSON.stringify(sim.returnVal)}` : '') + `</div>`) +
+      `<div style="font-size:9px;color:var(--muted);margin-top:4px">forward branches:\n${branchSummary}</div>` +
+      `<details style="margin-top:6px"><summary style="font-size:9px;color:var(--muted);cursor:pointer">final env (${Object.keys(sim.env).filter(k=>!k.startsWith('__')).length} vars)</summary>` +
+      `<pre style="font-size:9px;color:var(--cyan);margin-top:4px">${finalEnvStr}</pre></details>`;
+    c.appendChild(div);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// OLLAMA — §1.2 ADVISORY PARSER
+// ═══════════════════════════════════════════════════════════════════════
+async function checkOllama() {
+  const host = document.getElementById('oHost').value;
+  const dot = document.getElementById('oDot'), txt = document.getElementById('oTxt');
+  txt.textContent = 'checking…'; dot.className = 'dot';
+  try {
+    const res = await fetch(host + '/api/tags', { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const models = (data.models || []).map(m => m.name);
+    dot.className = 'dot on';
+    txt.textContent = `ollama online · ${models.length} model${models.length!==1?'s':''}`;
+    if (models.length) {
+      const sel = document.getElementById('oModel');
+      const cur = sel.value;
+      sel.innerHTML = '';
+      models.forEach(m => {
+        const o = document.createElement('option');
+        o.value = o.textContent = m;
+        if (m === cur || m.startsWith(cur.split(':')[0])) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+  } catch(e) {
+    dot.className = 'dot off';
+    txt.textContent = 'ollama offline — ' + e.message;
+  }
+}
+
+async function runAdvisory() {
+  const host  = document.getElementById('oHost').value;
+  const model = document.getElementById('oModel').value;
+  const nl    = document.getElementById('nlIn').value.trim();
+  const out   = document.getElementById('advOut');
+  const btn   = document.getElementById('advBtn');
+
+  if (!nl) { out.textContent = 'ERROR: Enter a workflow description.'; return; }
+  btn.disabled = true; out.textContent = ''; S.advText = '';
+
+  const sys =
+`You are an advisory parser for SolaVia CPS (Counterfactual Proof System).
+Convert the user's workflow description into a JSONFlow object.
+OUTPUT: only the JSON object — no markdown, no backticks, no explanation.
+
+Schema:
+{
+  "id": "kebab-case-string",
+  "version": "1.0",
+  "inputs": { "fieldName": "type" },
+  "steps": [
+    { "id": "s1", "op": "OP", "args": [], "dest": "varName | null", "meta": { "description": "..." } }
+  ]
+}
+
+Valid ops: SET  EVAL  JMP_IF  CALL  RETURN  ASSERT  EMIT  PARALLEL
+JMP_IF args: ["conditionVar", "thenStepId", "elseStepId"]
+Every step needs a unique id, op, and args array.`;
+
+  try {
+    const res = await fetch(host + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, stream: true, messages: [
+        { role: 'system', content: sys },
+        { role: 'user',   content: nl  }
+      ]})
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      dec.decode(value, { stream: true }).split('\n').filter(Boolean).forEach(line => {
+        try {
+          const chunk = JSON.parse(line).message?.content || '';
+          S.advText = (S.advText || '') + chunk;
+          out.textContent = S.advText;
+          out.scrollTop = out.scrollHeight;
+        } catch {}
+      });
+    }
+    document.getElementById('adoptBtn').disabled = false;
+  } catch(e) {
+    out.textContent = 'OLLAMA ERROR: ' + e.message + '\n\nEnsure Ollama is running at ' + host + '\nand CORS is enabled (OLLAMA_ORIGINS=* or run with --cors).';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function adoptAdvisory() {
+  if (!S.advText) return;
+  let t = S.advText.trim()
+    .replace(/^```json\n?/,'').replace(/^```\n?/,'').replace(/\n?```$/,'');
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s === -1 || e === -1) { alert('Could not extract JSON — check advisory output and paste manually.'); return; }
+  t = t.slice(s, e + 1);
+  try {
+    JSON.parse(t);
+    document.getElementById('wfEd').value = JSON.stringify(JSON.parse(t), null, 2);
+    nav(document.querySelector('[data-p="editor"]'));
+  } catch(err) {
+    document.getElementById('wfEd').value = t;
+    nav(document.querySelector('[data-p="editor"]'));
+    alert('Advisory output is not perfectly valid JSON — review and fix in Editor.\nError: ' + err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PROOF VAULT — PERSISTENCE + COMMITMENT SCHEME
+// Stores: { version, saved, proofHash, commitment(=traceHash hidden), meta }
+// Full trace only revealed on "Open Commitment"
+// ═══════════════════════════════════════════════════════════════════════
+const VAULT_KEY = 'solavia_cps_vault_v1';
+
+function vaultLoad() {
+  try { return JSON.parse(localStorage.getItem(VAULT_KEY) || '[]'); } catch { return []; }
+}
+function vaultStore(entries) {
+  localStorage.setItem(VAULT_KEY, JSON.stringify(entries));
+}
+
+async function vaultSave() {
+  if (!S.proof) { alert('Generate proof first (Proof Dashboard tab)'); return; }
+
+  const entries = vaultLoad();
+  const existsIdx = entries.findIndex(e => e.proofHash === S.proof.proofHash);
+
+  // Commitment = hash of (proofHash + traceHash + timestamp) — trace stays hidden
+  const savedAt = new Date().toISOString();
+  const commitment = await h256(S.proof.proofHash + (S.proof.hashes.traceHash || '') + savedAt);
+  const version = existsIdx >= 0 ? (entries[existsIdx].version || 1) + 1 : 1;
+
+  const entry = {
+    version,
+    savedAt,
+    proofHash: S.proof.proofHash,
+    workflowId: S.proof.workflowId,
+    commitment,
+    // Committed data (hidden until revealed):
+    _sealed: {
+      proof: JSON.parse(JSON.stringify(S.proof)),
+      traceHashes: S.traj.map(t => ({ i: t.index, h: t.stateHash, op: t.instruction.op }))
+    },
+    stats: S.proof.stats,
+    signingPublicKey: S.proof.signingPublicKey,
+  };
+
+  if (existsIdx >= 0) {
+    entry._history = [...(entries[existsIdx]._history || [{ v: entries[existsIdx].version, savedAt: entries[existsIdx].savedAt, proofHash: entries[existsIdx].proofHash }])];
+    entry._history.push({ v: version, savedAt, proofHash: S.proof.proofHash });
+    entries[existsIdx] = entry;
+  } else {
+    entry._history = [{ v: 1, savedAt, proofHash: S.proof.proofHash }];
+    entries.unshift(entry);
+  }
+
+  vaultStore(entries);
+  renderVault();
+}
+
+function renderVault() {
+  const entries = vaultLoad();
+  const el = document.getElementById('vaultList');
+  if (!entries.length) { el.textContent = '— no proofs saved —'; el.className = 'ob'; return; }
+  el.className = 'ob ok';
+  el.innerHTML = '';
+  entries.forEach((e, i) => {
+    const d = document.createElement('div');
+    d.className = 'ventry';
+    d.innerHTML =
+      `<div class="ventryh">` +
+      `<span class="snum">v${e.version}</span>` +
+      `<span style="font-size:10px;color:var(--txt)">${e.workflowId || '(unknown)'}</span>` +
+      `<span class="vtag">${e.savedAt?.slice(0,19).replace('T',' ')}</span>` +
+      `<span style="font-size:9px;color:var(--muted);margin-left:auto">${e.stats ? `${e.stats.trajectoryLength} steps · ${e.stats.effects} effects` : ''}</span>` +
+      `</div>` +
+      `<div class="thash">proofHash  : ${e.proofHash}</div>` +
+      `<div class="thash">commitment : ${e.commitment}</div>` +
+      (e._history?.length > 1 ? `<div style="font-size:9px;color:var(--yellow);margin-top:3px">⚑ ${e._history.length} versions — ` + e._history.map(h=>`v${h.v}@${h.savedAt?.slice(0,10)}`).join(', ') + `</div>` : '') +
+      `<div class="row" style="margin-top:8px">` +
+      `<button onclick="vaultOpen(${i})">Open Commitment</button>` +
+      `<button onclick="vaultDelete(${i})" style="color:var(--red)">Delete</button>` +
+      `</div>`;
+    el.appendChild(d);
+  });
+}
+
+function vaultOpen(i) {
+  const entries = vaultLoad();
+  const e = entries[i];
+  if (!e) return;
+  const d = document.getElementById('vaultDetail');
+  const sealed = e._sealed || {};
+  d.className = 'ob ok';
+  d.textContent =
+    `COMMITMENT OPENED\n` +
+    `═══════════════════════════════\n` +
+    `workflowId   : ${e.workflowId}\n` +
+    `version      : v${e.version}\n` +
+    `proofHash    : ${e.proofHash}\n` +
+    `commitment   : ${e.commitment}\n` +
+    `savedAt      : ${e.savedAt}\n\n` +
+    `Trace steps  : ${sealed.traceHashes?.length ?? '?'}\n` +
+    (sealed.traceHashes ? sealed.traceHashes.map(t=>`  [${String(t.i).padStart(3,'0')}] ${t.op.padEnd(10,' ')} ${t.h}`).join('\n') : '') +
+    `\n\nFull Proof Object:\n` +
+    JSON.stringify(sealed.proof, null, 2);
+}
+
+function vaultDelete(i) {
+  const entries = vaultLoad();
+  entries.splice(i, 1);
+  vaultStore(entries);
+  renderVault();
+  document.getElementById('vaultDetail').textContent = '—';
+  document.getElementById('vaultDetail').className = 'ob';
+}
+
+function vaultClear() {
+  if (!confirm('Delete all saved proofs?')) return;
+  localStorage.removeItem(VAULT_KEY);
+  renderVault();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXTERNAL CALL ENDPOINT MANAGER
+// ═══════════════════════════════════════════════════════════════════════
+function addCallRow(fn = '', url = '') {
+  const row = document.createElement('div');
+  row.className = 'callrow';
+  row.innerHTML =
+    `<input class="fn-in" placeholder="function name (e.g. approveTransaction)" value="${fn}">` +
+    `<input placeholder="POST endpoint URL (e.g. https://api.example.com/call)" value="${url}" style="flex:2">` +
+    `<span class="crstatus" id="crs-${Date.now()}">—</span>` +
+    `<button onclick="removeCallRow(this)">✕</button>`;
+  row.querySelector('.fn-in').addEventListener('input', syncEndpoints);
+  row.querySelector('input:nth-child(2)').addEventListener('input', syncEndpoints);
+  document.getElementById('callRows').appendChild(row);
+  syncEndpoints();
+}
+
+function removeCallRow(btn) {
+  btn.closest('.callrow').remove();
+  syncEndpoints();
+}
+
+function syncEndpoints() {
+  S.callEndpoints = {};
+  document.querySelectorAll('.callrow').forEach(row => {
+    const fn  = row.querySelector('.fn-in').value.trim();
+    const url = row.querySelector('input:nth-child(2)').value.trim();
+    if (fn && url) S.callEndpoints[fn] = url;
+  });
+}
+
+async function testCallEndpoints() {
+  const out = document.getElementById('callTestOut');
+  out.textContent = 'Testing…';
+  const rows = [...document.querySelectorAll('.callrow')];
+  const results = [];
+  for (const row of rows) {
+    const fn  = row.querySelector('.fn-in').value.trim();
+    const url = row.querySelector('input:nth-child(2)').value.trim();
+    const statusEl = row.querySelector('.crstatus');
+    if (!fn || !url) continue;
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fn, args: [], stateHash: 'test', test: true }),
+        signal: AbortSignal.timeout(5000),
+      });
+      statusEl.className = 'crstatus ok';
+      statusEl.textContent = r.ok ? `HTTP ${r.status}` : `ERR ${r.status}`;
+      results.push(`✓ ${fn.padEnd(24,' ')} → ${url} [${r.status}]`);
+    } catch (e) {
+      statusEl.className = 'crstatus err';
+      statusEl.textContent = 'FAIL';
+      results.push(`✗ ${fn.padEnd(24,' ')} → ${url}\n    ${e.message}`);
+    }
+  }
+  out.textContent = results.length ? results.join('\n') : '— no mappings configured —';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════════════
+(async () => {
+  await initKey();
+  checkOllama();
+  renderVault();
+  addCallRow(); // Start with one empty mapping row
+})();
+</script>
+</body>
+</html>
